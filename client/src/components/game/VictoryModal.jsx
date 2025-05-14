@@ -1,11 +1,11 @@
 // New component: VictoryModal.jsx
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { useGameContext } from '../../contexts/gameContext';
+import { useGameLogicContext } from '../../hooks/contextHooks'; // Corrected import
 
 function VictoryModal() { 
-  // Get necessary functions from context
-  const { resetGame, setKeepPlayingAfterWin } = useGameContext();
+  // Get necessary functions from GameLogicContext
+  const { resetGame, setKeepPlayingAfterWin } = useGameLogicContext(); // Use the new context hook
 
   return (
     <Box className="absolute inset-0 bg-black/70 flex items-center justify-center">
@@ -20,14 +20,14 @@ function VictoryModal() {
           <Button 
             variant="contained" 
             color="primary" 
-            onClick={resetGame} // Use resetGame from context
+            onClick={resetGame} // Use resetGame from GameLogicContext
             className="px-5"
           >
             New Game
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setKeepPlayingAfterWin(true)}
+            onClick={() => setKeepPlayingAfterWin(true)} // Use setKeepPlayingAfterWin from GameLogicContext
             className="px-5"
           >
             Keep Playing

@@ -81,10 +81,11 @@ const apiCall = async (endpoint, params = {}) => {
  * Fetches a random popular actor from TMDB
  * Used for generating start actors in the game
  * 
+ * @param {Array} excludeIds - Optional array of person IDs to exclude from random selection
  * @returns {Promise<Object>} Actor details including credits
  * @throws {Error} If no popular people are found or other API errors
  */
-export const fetchRandomPerson = async () => {
+export const fetchRandomPerson = async (excludeIds = []) => {
   try {
     // Get a list of popular people
     const page = Math.floor(Math.random() * 10) + 1; // Random page between 1 and 10
@@ -94,15 +95,31 @@ export const fetchRandomPerson = async () => {
       throw new Error('No popular people found');
     }
     
-    // Select a random person from the results
-    const randomIndex = Math.floor(Math.random() * popularPeople.results.length);
-    const randomPersonId = popularPeople.results[randomIndex].id;
+    // Filter out excluded IDs if any
+    const eligiblePeople = excludeIds.length > 0 
+      ? popularPeople.results.filter(person => !excludeIds.includes(person.id))
+      : popularPeople.results;
+    
+    // If no eligible people after filtering, try another page or use original list
+    const peopleToChooseFrom = eligiblePeople.length > 0 ? eligiblePeople : popularPeople.results;
+    
+    // Select a random person from the filtered results
+    const randomIndex = Math.floor(Math.random() * peopleToChooseFrom.length);
+    const randomPersonId = peopleToChooseFrom[randomIndex].id;
+    
+    console.log("Selected random actor ID:", randomPersonId);
     
     // Get detailed information for the random person
     return await getPersonDetails(randomPersonId);
   } catch (error) {
     console.error('Error fetching random person:', error);
-    throw error;
+    // Return a fallback object instead of throwing
+    return {
+      id: 1,
+      name: 'Error loading random actor',
+      profile_path: null,
+      error: true
+    };
   }
 };
 
@@ -463,6 +480,34 @@ export const checkActorInTvShow = async (actorId, tvShowId) => {
  * @param {string} query - The search query
  * @returns {Promise<Array>} - List of search results across movies, TV shows, and people
  */
+// Debug function to help diagnose search issues
+export const debugSearch = async (query) => {
+  console.log('⚠️ DEBUG: Running direct TMDB API search for:', query);
+  try {
+    // Do a direct search for each media type to bypass any potential issues
+    const [movieResults, tvResults, personResults] = await Promise.all([
+      apiCall('/search/movie', { query, include_adult: false, language: 'en-US' }),
+      apiCall('/search/tv', { query, include_adult: false, language: 'en-US' }),
+      apiCall('/search/person', { query, include_adult: false, language: 'en-US' })
+    ]);
+    
+    console.log('DEBUG SEARCH RESULTS:');
+    console.log('Movies found:', movieResults.results?.length || 0);
+    console.log('TV Shows found:', tvResults.results?.length || 0);
+    console.log('People found:', personResults.results?.length || 0);
+    
+    // Return the formatted results
+    return {
+      movies: (movieResults.results || []).map(m => ({ ...m, media_type: 'movie' })),
+      tvShows: (tvResults.results || []).map(tv => ({ ...tv, media_type: 'tv' })),
+      people: (personResults.results || []).map(p => ({ ...p, media_type: 'person' }))
+    };
+  } catch (error) {
+    console.error('Error in debug search:', error);
+    return { movies: [], tvShows: [], people: [], error: error.message };
+  }
+};
+
 export const searchMulti = async (query) => {
   try {
     if (!query || !query.trim()) {
@@ -737,6 +782,18 @@ export const getImageUrlSync = (path, type = 'poster') => {
   return getImageUrl(path, type);
 };
 
+// Helper function to get the title of an item (movie, TV show, or person)
+export const getItemTitle = (item) => {
+  if (!item) return 'Unknown';
+  if (item.media_type === 'movie') return item.title || item.original_title || 'Untitled Movie';
+  if (item.media_type === 'tv') return item.name || item.original_name || 'Untitled TV Show';
+  if (item.media_type === 'person') return item.name || 'Unnamed Person';
+  // Fallback for items that might not have media_type explicitly set yet but can be inferred
+  if (item.title && !item.name) return item.title; // Likely a movie
+  if (item.name && !item.title) return item.name; // Likely a TV show or person
+  return 'Unknown Item';
+};
+
 export default {
   fetchRandomPerson,
   getPersonDetails,
@@ -747,10 +804,11 @@ export default {
   getTvShowGuestStars,
   findPersonGuestAppearances,
   searchActorGuestAppearances,
-  checkActorInTvShow,
+  checkActorInTvShow, // Added missing export
   searchMulti,
   searchPeople,
   fetchPopularEntities,
   getImageUrl,
-  getImageUrlSync
+  getImageUrlSync,
+  getItemTitle // Added getItemTitle to default export as it was also missing and used in SearchContext
 };

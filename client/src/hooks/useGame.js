@@ -86,8 +86,7 @@ export const useGame = () => {
    * @param {function} setConnections - Function to set connections
    * @param {function} setSearchResults - Function to set search results
    * @param {function} setConnectableItems - Function to set connectable items
-   */
-  const resetGame = (
+   */  const resetGame = (
     setNodes, 
     setNodePositions, 
     setConnections, 
@@ -99,11 +98,12 @@ export const useGame = () => {
     setGameStartTime(null);
     setKeepPlayingAfterWin(false); // Reset the keepPlayingAfterWin flag
     setStartActors([null, null]);
-    setNodes([]);
-    setNodePositions({});
-    setConnections([]);
-    setSearchResults([]);
-    setConnectableItems({});
+      // Safely call state setters only if they are functions and not null
+    if (setNodes && typeof setNodes === 'function') setNodes([]);
+    if (setNodePositions && typeof setNodePositions === 'function') setNodePositions({});
+    if (setConnections && typeof setConnections === 'function') setConnections([]);
+    if (setSearchResults && typeof setSearchResults === 'function') setSearchResults([]);
+    if (setConnectableItems && typeof setConnectableItems === 'function') setConnectableItems({});
     // Keep previousSearches and knownEntities for better suggestions across games
   };
   

@@ -34,8 +34,8 @@ export const SIMILARITY_THRESHOLDS = {
  */
 export const DEFAULT_NODE_POSITION = { x: 300, y: 300 };
 export const RANDOM_POSITION_RANGE = {
-  X: { MIN: 100, MAX: 600 },
-  Y: { MIN: 100, MAX: 400 },
+  X: { MIN: 200, MAX: 700 },
+  Y: { MIN: 200, MAX: 500 },
 };
 
 /**

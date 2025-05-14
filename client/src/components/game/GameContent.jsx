@@ -1,5 +1,5 @@
 import React from 'react';
-import { useGameContext } from '../../contexts/gameContext';
+import { useGameLogicContext } from '../../hooks/contextHooks';
 import StartScreen from '../StartScreen';
 import GameplayArea from './GameplayArea';
 import { Box } from '@mui/material';
@@ -11,7 +11,6 @@ import ChallengeMode from '../ChallengeMode';
 import Register from '../Register';
 import Login from '../Login';
 
-
 function GameContent() {
   const { 
     gameStarted, 
@@ -19,14 +18,13 @@ function GameContent() {
     keepPlayingAfterWin, 
     resetGame, 
     setKeepPlayingAfterWin 
-  } = useGameContext();
+  } = useGameLogicContext();
   
   return (
     <Box 
-      className="flex flex-col h-screen" // Keep other Tailwind classes
+      className="flex flex-col h-screen"
       sx={{
-        backgroundColor: !gameStarted ? 'black' : 'transparent', // Or your desired default
-        // Potentially set to theme.palette.background.default if you want to use MUI theme's default
+        backgroundColor: !gameStarted ? 'black' : 'transparent',
       }}
     >
       {!gameStarted ? ( <StartScreen /> ) : ( <GameplayArea 

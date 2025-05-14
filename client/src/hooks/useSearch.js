@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { searchMulti, searchPeople, fetchPopularEntities } from '../services/tmdbService';
 import { stringSimilarity, getItemTitle } from '../utils/stringUtils';
 import { SIMILARITY_THRESHOLDS } from '../utils/constants';
@@ -8,7 +8,9 @@ import { SIMILARITY_THRESHOLDS } from '../utils/constants';
  * @returns {Object} - Search methods and state
  */
 export const useSearch = () => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [showAllSearchable, setShowAllSearchable] = useState(false);
   const [noMatchFound, setNoMatchFound] = useState(false);
   const [didYouMean, setDidYouMean] = useState(null);
   const [exactMatch, setExactMatch] = useState(null);
@@ -23,25 +25,16 @@ export const useSearch = () => {
     const storedEntities = sessionStorage.getItem('knownEntities');
     return storedEntities ? JSON.parse(storedEntities) : [];
   });
-  const [popularEntities, setPopularEntities] = useState([]);
   const [connectableItems, setConnectableItems] = useState({});
-  
-  // New state for tracking all possible connectable entities
   const [connectableEntities, setConnectableEntities] = useState([]);
   
-  // Fetch popular entities on mount
-  useEffect(() => {
-    const loadPopularEntities = async () => {
-      try {
-        const entities = await fetchPopularEntities();
-        setPopularEntities(entities);
-      } catch (error) {
-        console.error('Error loading popular entities:', error);
-      }
-    };
-    
-    loadPopularEntities();
-  }, []);
+  // States for actor search (start actors)
+  const [actorSearchResults, setActorSearchResults] = useState([[], []]);
+  const [actorSearchTerms, setActorSearchTerms] = useState(['', '']);
+  const [actorSearchPages, setActorSearchPages] = useState([1, 1]);
+  const [actorSearchTotalPages, setActorSearchTotalPages] = useState([0, 0]);
+  const [isActorSearchLoading, setIsActorSearchLoading] = useState([false, false]); // Loading per actor search input
+  const [isLoading, setIsLoading] = useState(false); // General loading state for searches
   
   // Update session storage when previousSearches changes
   useEffect(() => {
@@ -60,7 +53,7 @@ export const useSearch = () => {
   /**
    * Check for possible misspellings based on known terms using simple string comparison
    * Prioritizes connectable entities that might match the user's input
-   * @param {string} term - Term to check for misspellings
+   * @param {string} term - Term to check for misspelling
    * @returns {Object|null} - Suggested entity or null
    */
   const checkForMisspelling = (term) => {
@@ -392,66 +385,91 @@ export const useSearch = () => {
    * @param {string} query - Search query
    * @param {number} actorIndex - Actor position index (0 or 1)
    * @param {number} page - Page number for pagination
-   * @param {function} setActorSearchResults - Function to set search results
-   * @param {function} setActorSearchPages - Function to set current page
-   * @param {function} setActorSearchTotalPages - Function to set total pages
-   * @param {function} setIsLoading - Function to set loading state
    */
-  const searchStartActors = async (
-    query, 
-    actorIndex, 
-    page = 1,
-    setActorSearchResults,
-    setActorSearchPages,
-    setActorSearchTotalPages,
-    setIsLoading
-  ) => {
+  const searchStartActors = async (query, actorIndex, page = 1) => {
     try {
+      // Update loading state for the specific actor search
+      setIsActorSearchLoading(prev => {
+        const newLoading = [...prev];
+        newLoading[actorIndex] = true;
+        return newLoading;
+      });
+
       if (!query.trim()) {
         setActorSearchResults(prev => {
           const newResults = [...prev];
           newResults[actorIndex] = [];
           return newResults;
         });
+        setActorSearchTerms(prev => {
+            const newTerms = [...prev];
+            newTerms[actorIndex] = '';
+            return newTerms;
+        });
+        // Ensure loading state is reset
+        setIsActorSearchLoading(prev => {
+            const newLoading = [...prev];
+            newLoading[actorIndex] = false;
+            return newLoading;
+        });
+        // Reset total pages for this actor index if query is cleared
+        setActorSearchTotalPages(prev => {
+            const currentPages = Array.isArray(prev) ? [...prev] : [0, 0];
+            currentPages[actorIndex] = 0;
+            return currentPages;
+        });
         return;
       }
       
-      setIsLoading(true);
+      setActorSearchTerms(prev => {
+        const newTerms = [...prev];
+        newTerms[actorIndex] = query;
+        return newTerms;
+      });
+
       const response = await searchPeople(query, page);
       
-      // Filter out results without ID or profile images
-      const filteredResults = response.results.filter(actor => {
-        return actor.id && actor.profile_path;
-      });
+      const filteredResults = response.results.filter(actor => actor.id && actor.profile_path);
       
-      // Update actor search results
       setActorSearchResults(prev => {
         const newResults = [...prev];
         newResults[actorIndex] = filteredResults;
         return newResults;
       });
 
-      // Update page information
       setActorSearchPages(prev => {
         const newPages = [...prev];
-        newPages[actorIndex] = response.page;
+        newPages[actorIndex] = response.page || 1; // Default to 1 if page is undefined
         return newPages;
       });
 
       setActorSearchTotalPages(prev => {
-        const newTotalPages = [...prev];
-        newTotalPages[actorIndex] = response.total_pages;
-        return newTotalPages;
+        // Ensure 'prev' is an array; if not, reset to default.
+        const currentPages = Array.isArray(prev) ? [...prev] : [0, 0];
+        currentPages[actorIndex] = response.total_pages || 0; // Ensure the element is a number, default to 0.
+        // Ensure both elements are numbers if the array had a different length or uninitialized slots.
+        if (typeof currentPages[0] !== 'number') currentPages[0] = 0;
+        if (typeof currentPages[1] !== 'number') currentPages[1] = 0;
+        return currentPages;
       });
       
-      // Learn from the search
       if (filteredResults && filteredResults.length > 0) {
         learnFromSuccessfulSearch(query, filteredResults.map(result => ({ ...result, media_type: 'person' })));
       }
     } catch (error) {
       console.error('Error searching for actors:', error);
+      // Reset total pages on error for this actor index
+      setActorSearchTotalPages(prev => {
+          const currentPages = Array.isArray(prev) ? [...prev] : [0, 0];
+          currentPages[actorIndex] = 0;
+          return currentPages;
+      });
     } finally {
-      setIsLoading(false);
+      setIsActorSearchLoading(prev => {
+        const newLoading = [...prev];
+        newLoading[actorIndex] = false;
+        return newLoading;
+      });
     }
   };
 
@@ -460,7 +478,7 @@ export const useSearch = () => {
    * @param {Object} node - The node to analyze for connectable entities
    * @param {Function} fetchNodeConnectionsCallback - Function that fetches possible connections for a node
    */
-  const updateConnectableEntitiesForNode = async (node, fetchNodeConnectionsCallback) => {
+  const updateConnectableEntitiesForNode = useCallback(async (node, fetchNodeConnectionsCallback) => {
     if (!node || !node.data || !fetchNodeConnectionsCallback) return;
     
     try {
@@ -490,28 +508,7 @@ export const useSearch = () => {
     } catch (error) {
       console.error('Error updating connectable entities:', error);
     }
-  };
-
-  // Add a function to update connectable entities with TV shows where an actor appears
-  const updateConnectableEntitiesWithActorShows = (actorDetails) => {
-    if (!actorDetails) return;
-    
-    // Get existing connectable entities
-    const newConnectableEntities = addActorTvShowsToConnectableEntities(
-      actorDetails, 
-      connectableEntities
-    );
-    
-    if (newConnectableEntities.length > 0) {
-      // Update the state with new entities
-      setConnectableEntities(prevEntities => [
-        ...prevEntities, 
-        ...newConnectableEntities
-      ]);
-      
-      console.log(`Added ${newConnectableEntities.length} TV shows from actor ${actorDetails.name}`);
-    }
-  };
+  }, [setConnectableEntities]);
 
   /**
    * Process an actor's data to extract all TV shows they've appeared in (including guest appearances)
@@ -590,9 +587,41 @@ export const useSearch = () => {
     return uniqueShows;
   };
 
+  const clearSearchResults = () => {
+    setSearchTerm('');
+    setSearchResults([]);
+    setShowAllSearchable(false);
+    setNoMatchFound(false);
+    setDidYouMean(null);
+    setExactMatch(null);
+    setOriginalSearchTerm('');
+    // Do not clear connectableItems here as it's managed by selectedNode
+  };
+
+  const resetSearchState = () => {
+    setSearchTerm('');
+    setSearchResults([]);
+    setShowAllSearchable(false);
+    setNoMatchFound(false);
+    setDidYouMean(null);
+    setExactMatch(null);
+    setOriginalSearchTerm('');
+    setConnectableItems({});
+    setConnectableEntities([]);
+    setActorSearchResults([[], []]);
+    setActorSearchTerms(['', '']);
+    setActorSearchPages([1, 1]);
+    setActorSearchTotalPages([0, 0]); // Ensures it's always an array
+    setIsActorSearchLoading([false, false]);
+  };
+
   return {
+    searchTerm,
+    setSearchTerm,
     searchResults,
     setSearchResults,
+    showAllSearchable,
+    setShowAllSearchable,
     noMatchFound,
     setNoMatchFound,
     didYouMean,
@@ -613,8 +642,18 @@ export const useSearch = () => {
     findExactMatch,
     learnFromSuccessfulSearch,
     useSpellingCorrection,
+    // Actor search related states and function
+    actorSearchResults,
+    actorSearchTerms,
+    actorSearchPages,
+    actorSearchTotalPages,
+    isActorSearchLoading,
     searchStartActors,
     updateConnectableEntitiesForNode,
-    addActorTvShowsToConnectableEntities
+    addActorTvShowsToConnectableEntities,
+    clearSearchResults,
+    resetSearchState,
+    isLoading, // Added for general search loading state
+    setIsLoading // Added for general search loading state
   };
 };

@@ -9,7 +9,7 @@
  * 5. Coordinates with the game state for displaying the current game status
  */
 import React, { useRef, useEffect, useState } from 'react';
-import { useGameContext } from '../../contexts/gameContext';
+import { useGameLogicContext, useBoardContext, useSearchContext } from '../../hooks/contextHooks.js';
 import ConnectionsPanel from './ConnectionsPanel';
 import LoadingOverlay from './LoadingOverlay';
 import GameStats from './GameStats';
@@ -19,27 +19,34 @@ import { Box } from '@mui/material';
 import './GameBoard.css';
 
 const GameBoard = () => {
-  // Get game state and functions from context
+  // Get game state and functions from new contexts
+  const {
+    gameCompleted,
+    startActors,
+    selectedNode: selectedNodeFromGameLogic,
+    gameStartTime,
+    bestScore,
+    shortestPathLength,
+    isLoading: isLoadingGameLogic
+  } = useGameLogicContext();
+
   const {
     nodes,
     connections,
     nodePositions,
-    updateNodePosition,
-    isLoading,
-    gameCompleted,
-    startActors,
-    selectedNode,
-    gameStartTime,
-    bestScore,
-    shortestPathLength,
-    searchResults // Get search results to determine if search panel is expanded
-  } = useGameContext();
+    updateNodePosition
+  } = useBoardContext();
+
+  const {
+    searchResults,
+    isLoading: isLoadingSearch
+  } = useSearchContext();
   
+  // Combine isLoading flags if necessary
+  const isLoading = isLoadingGameLogic || isLoadingSearch;
+
   // Refs for DOM elements and animation
   const boardRef = useRef(null);
-  // const svgRef = useRef(null); // Removed unused ref
-  
-  // Create refs for connections to animate them
   const connectionRefs = useRef({});
   
   // Set board dimensions using state
@@ -141,7 +148,7 @@ const GameBoard = () => {
     return nodes.length - 2;
   };
 
-  // pre-calculate the formatted values to avoid using hooks in the render method
+  // Pre-calculate the formatted values to avoid using hooks in the render method
   const formattedTimeValue = formatTime(elapsedTime);
   const formattedBestScoreValue = formatBestScore();
   const pathLengthValue = getPathLength();
@@ -163,13 +170,11 @@ const GameBoard = () => {
         connectionRefs={connectionRefs}
         boardSize={boardSize}
         gameCompleted={gameCompleted}
-      />
-      {/* Node Layer - contains all the draggable entities (actors, movies, TV shows) */}
+      />      {/* Node Layer - contains all the draggable entities (actors, movies, TV shows) */}
       <NodeLayer
           nodes={nodes}
           nodePositions={nodePositions}
           updateNodePosition={updateNodePosition}
-          boardSize={boardSize}
           startActors={startActors}
       />
         
@@ -183,7 +188,7 @@ const GameBoard = () => {
       />
         
       {/* Other components... */}
-      {selectedNode && <ConnectionsPanel />}
+      {selectedNodeFromGameLogic && <ConnectionsPanel />}
       {isLoading && <LoadingOverlay />}
     </Box>
   );

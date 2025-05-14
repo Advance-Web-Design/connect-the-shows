@@ -1,9 +1,9 @@
 import React from 'react';
-import { useGameContext } from '../../contexts/gameContext';
+import { useGameLogicContext } from '../../hooks/contextHooks';
 import './InfoBar.css';
 
 const InfoBar = () => {
-  const { gameStarted, gameCompleted } = useGameContext();
+  const { gameStarted, gameCompleted } = useGameLogicContext();
   
   if (!gameStarted) return null;
 

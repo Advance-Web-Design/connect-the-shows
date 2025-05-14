@@ -1,11 +1,11 @@
-import { useGameContext } from '../../contexts/gameContext';
+import { useGameLogicContext } from '../../hooks/contextHooks';
 import Menu from '../Menu';
 
 const BoardHeader = () => {
   const {  
     gameStarted, 
     startActors, 
-  } = useGameContext();
+  } = useGameLogicContext();
 
   return (
     <header className="game-header">

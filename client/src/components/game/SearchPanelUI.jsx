@@ -10,12 +10,11 @@ const SearchPanelUI = ({
   hasResults,
   didYouMean,
   originalSearchTerm,
-  useSpellingCorrection,
+  useSpellingCorrection, // This is actually applySpellingCorrection from context
   noMatchFound,
   shouldShowResults,
   resultsContainerRef,
-  organizedResults,
-  connectableItems,
+  organizedResults,  // connectableItems - no longer needed since all items in organizedResults.connectable are already filtered 
   handleAddToBoard,
 }) => {
   return (
@@ -98,11 +97,10 @@ const SearchPanelUI = ({
       {/* Search Results - only show if we have search term and results */}
       {shouldShowResults && (
         <div className="in-game-search-results" ref={resultsContainerRef}>
-          {/* Only show connectable results - no need to separate into categories */}
-          {organizedResults.connectable.map(item => (
+          {/* Only show connectable results - no need to separate into categories */}          {organizedResults.connectable.map(item => (
             <div
               key={`${item.media_type}-${item.id}`}
-              className={`in-game-result-item ${connectableItems[`${item.media_type}-${item.id}`] ? 'can-connect' : ''}`}
+              className="in-game-result-item can-connect"
               onClick={() => handleAddToBoard(item)}
             >
               <div className="in-game-result-image">

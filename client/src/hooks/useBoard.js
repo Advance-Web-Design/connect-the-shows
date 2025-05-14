@@ -6,7 +6,7 @@
  * by handling how entities (actors, movies, TV shows) connect to each other.
  */
 import { useState } from 'react';
-import { getPersonDetails, getMovieDetails, getTvShowDetails, findPersonGuestAppearances, fetchPopularEntities } from '../services/tmdbService';
+import { getPersonDetails, getMovieDetails, getTvShowDetails, findPersonGuestAppearances } from '../services/tmdbService';
 import { getItemTitle } from '../utils/stringUtils';
 import { DEFAULT_NODE_POSITION, RANDOM_POSITION_RANGE } from '../utils/constants';
 
@@ -147,18 +147,22 @@ export const useBoard = () => {
    * @param {Object} item - Item to check (person, movie, TV)
    * @param {Array} startingActors - The two starting actors
    * @returns {Promise<boolean>} - Whether the item can connect to starting actors
-   */
-  const checkInitialConnectability = async (item, startingActors) => {
+   */  const checkInitialConnectability = async (item, startingActors) => {
     try {
-      // Make sure we have starting actors
+      // Make sure we have starting actors and valid item
+      if (!item) {
+        console.error("No item provided to checkInitialConnectability");
+        return false;
+      }
+      
       if (!startingActors || startingActors.length === 0) {
         console.error("No starting actors provided to checkInitialConnectability");
         return false;
       }
 
-      // Log to help debug the issue
-      console.log(`Checking connectability for ${item.media_type} "${getItemTitle(item)}" with starting actors`);
-      
+      // Enhanced logging to help debug the issue
+      console.log(`Checking connectability for ${item.media_type || 'unknown type'} "${getItemTitle(item)}" with starting actors:`, 
+        startingActors.map(actor => actor ? actor.name : 'undefined actor'));
       if (item.media_type === 'movie') {
         const details = await getMovieDetails(item.id);
         const cast = details.credits?.cast || [];
@@ -489,9 +493,7 @@ export const useBoard = () => {
        * 
        * @returns {Object} - Position coordinates {x, y}
        */
-      const calculateNewNodePosition = () => {
-        let newPosition = { ...DEFAULT_NODE_POSITION };
-      
+      const calculateNewNodePosition = () => {      
         if (newConnections.length > 0) {
           // Find average position of connected nodes
           let sumX = 0;
