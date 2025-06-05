@@ -11,6 +11,11 @@ const nextConfig = {
     config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
     return config;
   },
+  // Skip API routes during static generation
+  trailingSlash: false,
+  async generateBuildId() {
+    return 'build-' + Date.now();
+  }
 };
 
 export default nextConfig;
