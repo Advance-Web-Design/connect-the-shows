@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:client && next build",
-    "build:client": "cd ../client && npm install && npm run build && mkdir -p ../server/public && cp -r dist ../server/public/client",
+    "build": "next build",
+    "build:full": "npm run build:client && next build",
+    "build:client": "cd ../client && npm install --include=dev && npm run build && mkdir -p ../server/public && cp -r dist ../server/public/client",
     "start": "next start",
     "lint": "next lint"
   },
