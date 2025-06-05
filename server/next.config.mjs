@@ -1,9 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static generation since this is API-only
-  output: 'standalone',
-  
-  // Optional: Add CORS headers globally if needed
+  async rewrites() {
+    return [
+      // Serve client app from root, but preserve API routes
+      {
+        source: '/((?!api|_next|static|favicon.ico).*)',
+        destination: '/client/$1'
+      }
+    ];
+  },
   async headers() {
     return [
       {
@@ -14,6 +19,15 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
       },
+      {
+        source: '/client/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      }
     ];
   },
 };

@@ -16,6 +16,11 @@ const getBackendUrl = () => {
     return '/api';
   }
   
+  // Check for environment variable first (only exists in deployment)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL + '/api';
+  }
+  
   // In development, check if we have a custom backend URL
   if (typeof window !== 'undefined') {
     // Allow override via localStorage for testing different backend URLs
@@ -25,7 +30,7 @@ const getBackendUrl = () => {
     }
   }
   
-  // Default development backend URL
+  // Default development backend URL (fallback when no .env exists)
   return 'http://localhost:3000/api';
 };
 

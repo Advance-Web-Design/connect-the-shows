@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:client && next build",
+    "build:client": "cd ../client && npm install && npm run build && xcopy /E /I /Y dist ..\\server\\public\\client",
     "start": "next start",
     "lint": "next lint"
   },
