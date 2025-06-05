@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: false,
+  output: 'standalone',
+  experimental: {
+    outputFileTracingRoot: process.cwd(),
+  },
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
+    return config;
+  },
   async rewrites() {
     return [
       // Serve client assets (JS/CSS from Vite build) FIRST

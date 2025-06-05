@@ -1,0 +1,8 @@
+node_modules
+.env.local
+.env
+README.md
+*.md
+.git
+.next/cache
+.next/trace
