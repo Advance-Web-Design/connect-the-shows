@@ -1,26 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async headers() {
+  // Ensure static files are served correctly
+  trailingSlash: false,
+  async rewrites() {
     return [
+      // Serve client app
       {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
-        ],
+        source: '/',
+        destination: '/client/index.html',
+      },
+      // Serve client assets
+      {
+        source: '/src/:path*',
+        destination: '/client/src/:path*',
       },
       {
-        source: '/client/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+        source: '/assets/:path*',
+        destination: '/client/assets/:path*',
       }
     ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
