@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  // Handle CORS for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  const { pathname } = request.nextUrl;
+  
+  // Handle API routes with CORS
+  if (pathname.startsWith('/api/')) {
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -25,9 +27,25 @@ export function middleware(request) {
     return response;
   }
 
-  return NextResponse.next();
+  // Skip Next.js internal routes
+  if (pathname.startsWith('/_next/') || 
+      pathname.startsWith('/static/') ||
+      pathname === '/favicon.ico') {
+    return NextResponse.next();
+  }
+  
+  // Serve client assets (CSS, JS, images)
+  if (pathname.startsWith('/assets/')) {
+    return NextResponse.rewrite(new URL(`/client${pathname}`, request.url));
+  }
+  
+  // Serve client index.html for all other routes (SPA routing)
+  return NextResponse.rewrite(new URL('/client/index.html', request.url));
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    '/api/:path*',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
