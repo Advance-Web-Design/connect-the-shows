@@ -1,15 +1,5 @@
-
-import { get } from "firebase/database";
-
-import { getDatabase, ref, push, set } from "firebase/database";
-
-import { initializeApp } from "firebase/app";
-
-import { getAnalytics } from "firebase/analytics";
-
-
-
-
+import { get, getDatabase, ref, push, set } from "firebase/database";
+import { initializeApp, getApps } from "firebase/app";
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -22,16 +12,27 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
+// Lazy initialization - only initialize when needed
+let app;
+let db;
 
-const app = initializeApp(firebaseConfig);
-
-
-const db = getDatabase(app);
+function initializeFirebase() {
+  if (!app && getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+  } else if (!app) {
+    app = getApps()[0];
+  }
+  if (!db) {
+    db = getDatabase(app);
+  }
+  return db;
+}
 
 // Register a new user
 export async function addUser(username, password, email) {
-
-console.log('Adding user:', username, email);
+  const database = initializeFirebase(); // Initialize only when called
+  
+  console.log('Adding user:', username, email);
 
 //     // Check if user already exists             
 // const existingUsers = await db.collection('users').where('username', '==', username).get();
@@ -43,7 +44,7 @@ console.log('Adding user:', username, email);
 
 
 
-const usersRef = ref(db, 'users');
+const usersRef = ref(database, 'users');
   const newUserRef = push(usersRef);
   const userData = {
     username,
@@ -76,10 +77,12 @@ const usersRef = ref(db, 'users');
 
 // Verify user credentials (basic example)
 export async function verifyUser(username, password) {
+  const database = initializeFirebase(); // Initialize only when called
+  
   // Firebase Admin SDK does not support password verification directly.
   // You should use Firebase Auth REST API or custom logic.
   // For demo, just check if user exists by username.
-  const users = await db.collection('users').where('username', '==', username).get();
+  const users = await database.collection('users').where('username', '==', username).get();
   if (users.empty) throw new Error('User not found');
   // You cannot verify password here securely; use client-side Firebase Auth for login.
   return users.docs[0].id;
@@ -87,7 +90,9 @@ export async function verifyUser(username, password) {
 
 // Record a game session
 export async function recordGameSession(sessionData) {
-  const docRef = await db.collection('gameSessions').add({
+  const database = initializeFirebase(); // Initialize only when called
+  
+  const docRef = await database.collection('gameSessions').add({
     ...sessionData,
     createdAt: new Date(),
   });
