@@ -10,16 +10,16 @@
     },
     {
       "src": "server/package.json",
-      "use": "@vercel/node",
+      "use": "@vercel/next",
       "config": {
-        "includeFiles": "server/**"
+        "zeroConfig": true
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/api/$1"
+      "dest": "server/$1"
     },
     {
       "src": "/(.*)",
