@@ -3,21 +3,35 @@ const nextConfig = {
   trailingSlash: false,
   async rewrites() {
     return [
-      // Serve client app
+      // Serve client assets (JS/CSS from Vite build) FIRST
       {
-        source: '/',
-        destination: '/client/index.html',
+        source: '/assets/:path*',
+        destination: '/client/assets/:path*',
       },
-      // Serve client assets (JS/CSS from Vite build)
       {
         source: '/src/:path*',
         destination: '/client/src/:path*',
       },
+      // Serve client app ONLY for exact root path (not catch-all)
       {
-        source: '/assets/:path*',
-        destination: '/client/assets/:path*',
+        source: '/',
+        destination: '/client/index.html',
       }
-      // Images will be served automatically from /public/ root
+      // Remove the catch-all that was intercepting image requests
+    ];
+  },
+  // Ensure static files are served properly
+  async headers() {
+    return [
+      {
+        source: '/:path*.png',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'image/png',
+          },
+        ],
+      },
     ];
   },
 };
