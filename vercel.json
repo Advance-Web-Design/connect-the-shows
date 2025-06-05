@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "name": "",
+  "name": "connect-the-shows",
   "buildCommand": "npm run build",
-  "outputDirectory": "server/.next",
-  "installCommand": "cd server && npm install",
-  "framework": "nextjs"
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rootDirectory": "server"
 }
