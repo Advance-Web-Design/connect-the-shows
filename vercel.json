@@ -1,13 +1,8 @@
 {
   "version": 2,
-  "name": "connect-the-shows",
+  "name": "",
   "buildCommand": "cd server && npm run build",
   "outputDirectory": "server/.next",
   "installCommand": "cd server && npm install",
-  "framework": "nextjs",
-  "functions": {
-    "server/app/api/**/*.js": {
-      "maxDuration": 30
-    }
-  }
+  "framework": "nextjs"
 }

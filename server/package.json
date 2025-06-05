@@ -5,18 +5,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run build:client && next build",
-    "build:client": "cd ../client && npm install && npm run build && xcopy /E /I /Y dist ..\\server\\public\\client",
+    "build:client": "cd ../client && npm install && npm run build && cp -r dist ../server/public/client",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "firebase": "^11.8.1",
     "memory-cache": "^0.2.0",
-    "next": "^15.3.2",
+    "next": "^14.2.0",
     "node-cache": "^5.1.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
