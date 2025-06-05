@@ -22,4 +22,5 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Use ES module export instead of module.exports
+export default nextConfig;
