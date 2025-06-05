@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run build:client && next build",
-    "build:client": "cd ../client && npm install --include=dev && npm run build && npm run copy:client",
-    "copy:client": "node -e \"const fs = require('fs'); const path = require('path'); fs.cpSync(path.join('..', 'client', 'dist'), path.join('public', 'client'), {recursive: true, force: true});\"",
+    "build:client": "cd ../client && npm install --include=dev && npm run build && node ../server/scripts/copy-client.js",
     "start": "next start",
     "lint": "next lint"
   },
